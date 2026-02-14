@@ -1,0 +1,31 @@
+SAMPLES=["SRR013566", "SRR013564", "SRR013553", "SRR013552", "SRR013577", "SRR013579", "SRR013580", "SRR013575", "SRR013563", "SRR013583", "SRR013556", "SRR013581", "SRR013555", "SRR013576", "SRR013551", "SRR013570", "SRR013569", "SRR013587", "SRR013574", "SRR013588", "SRR013578"]
+
+rule all:
+    input:
+        expand("data/raw/{sample}.fastq.gz", sample=SAMPLES)
+
+
+rule srr_download:
+    output:
+        "data/raw/{sample}.fastq.gz"
+    params:
+        temp_dir="data/sra",
+        final_dir="data/raw"
+    conda:
+        "envs/sra_tool.yaml"
+    threads: 4
+    shell:
+        """
+        mkdir -p data/sra
+        mkdir -p data/raw
+
+        prefetch {wildcards.sample} --output-directory {params.temp_dir}
+        fasterq-dump {params.temp_dir}/{wildcards.sample} \
+        --outdir {params.final_dir} \
+        --threads {threads}
+
+        gzip {params.final_dir}/{wildcards.sample}.fastq
+
+        rm -rf {params.temp_dir}/{wildcards.sample}
+        """
+
